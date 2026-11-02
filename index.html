@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7-11 咖啡優惠計算機</title>
+    <style>
+        :root {
+            --711-orange: #f48120;
+            --711-green: #008060;
+            --711-red: #df2624;
+            --bg-color: #f7f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 12px;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        header {
+            text-align: center;
+            padding: 12px 0;
+            margin-bottom: 12px;
+            border-bottom: 3px solid var(--711-green);
+        }
+        h1 {
+            font-size: 1.4rem;
+            color: var(--711-green);
+            display: inline-block;
+        }
+        h1 span { color: var(--711-orange); }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #444;
+            border-left: 4px solid var(--711-orange);
+            padding-left: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        input[type="number"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        /* Grid Layouts for Buttons */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .btn {
+            background: #f0f2f5;
+            border: 1px solid #ddd;
+            padding: 10px 8px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn.active {
+            background-color: #e8f5e9;
+            border-color: var(--711-green);
+            color: var(--711-green);
+            font-weight: bold;
+        }
+        
+        /* Collapsible Section */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+        .collapsible-content {
+            display: none;
+            padding-top: 12px;
+            margin-top: 8px;
+            border-top: 1px dashed #ddd;
+        }
+        .collapsible-content.show {
+            display: block;
+        }
+        .arrow {
+            transition: transform 0.2s;
+            font-weight: bold;
+        }
+        .arrow.rotate {
+            transform: rotate(90deg);
+        }
+        
+        /* Custom Promo Builder */
+        .custom-promo-block {
+            background: #fafafa;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .custom-promo-block .title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #666;
+        }
+        
+        /* Summary Section */
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.95rem;
+        }
+        .summary-total {
+            border-top: 2px solid #eee;
+            margin-top: 8px;
+            padding-top: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--711-red);
+        }
+        .gift-tag {
+            background: #fff3cd;
+            color: #856404;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            border: 1px solid #ffeeba;
+            display: inline-block;
+        }
+        
+        /* Utility styles */
+        .w-full { grid-column: span 2; }
+        .flex-1 { flex: 1; }
+        .text-center { text-align: center; }
+        .text-muted { color: #777; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>7-<span>11</span> 咖啡優惠計算機</h1>
+    </header>
+
+    <!-- 1. 基礎咖啡單價 -->
+    <div class="card">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="basePrice">☕ 咖啡原價 (單杯)：</label>
+            <div class="input-row">
+                <input type="number" id="basePrice" value="55" min="0" placeholder="請輸入單杯原價">
+                <span style="font-weight: bold;">元</span>
+                <input type="number" id="coffeeQty" value="1" min="1" placeholder="數量" style="max-width: 80px;">
+                <span style="font-weight: bold;">杯</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 常用快捷優惠 (可多選/複合) -->
+    <div class="card">
+        <div class="section-title">✨ 常用快捷優惠 (可同時勾選)</div>
+        <div class="btn-grid">
+            <button class="btn" id="p_b2g2" onclick="togglePreset('b2g2')">買 2 送 2</button>
+            <button class="btn" id="p_b3g1" onclick="togglePreset('b3g1')">買 3 送 1</button>
+            <button class="btn" id="p_2f79" onclick="togglePreset('2f79')">任 2 杯 79 折</button>
+            <button class="btn" id="p_4f75" onclick="togglePreset('4f75')">任 4 杯 75 折</button>
+            <button class="btn w-full" id="p_s1111_100" onclick="togglePreset('s1111_100')">滿 1111 折 100</button>
+            <button class="btn" id="p_s250_20" onclick="togglePreset('s250_20')">滿 250 折 20</button>
+            <button class="btn" id="p_s1111_g" onclick="togglePreset('s1111_g')">滿 1111 送贈品</button>
+        </div>
+    </div>
+
+    <!-- 3. 自訂進階優惠 (摺疊區塊) -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleCollapsible()">
+            <span class="section-title" style="margin-bottom: 0;">🛠️ 自訂進階優惠組合</span>
+            <span class="arrow" id="collapsibleArrow">▶</span>
+        </div>
+        
+        <div class="collapsible-content" id="collapsibleContent">
+            <!-- 類型 A: 買 X 送 Y -->
+            <div class="custom-promo-block">
+                <div class="title">【自訂】買 X 送 Y</div>
+                <div class="input-row">
+                    <span>買</span>
+                    <input type="number" id="custom_bx" placeholder="X" min="0">
+                    <span>送</span>
+                    <input type="number" id="custom_by" placeholder="Y" min="0">
+                    <button class="btn" style="padding: 6px 12px;" onclick="applyCustom('bxy')">套用</button>
+                </div>
+            </div>
+
+            <!-- 類型 B: X 件 Y 折 -->
+            <div class="custom-promo-block">
+                <div class="title">【自訂】X 件 Y 折</div>
+                <div class="input-row">
+                    <span>任</span>
+                    <input type="number" id="custom_dx" placeholder="X" min="0">
+                    <span>件</span>
+                    <input type="number" id="custom_dy" placeholder="Y" min="0" max="99">
+                    <span>折</span>
+                    <button class="btn" style="padding: 6px 12px;" onclick="applyCustom('dxy')">套用</button>
+                </div>
+                <div class="text-muted" style="margin-top: 4px;">* 註：79折請輸入 79，75折請輸入 75</div>
+            </div>
+
+            <!-- 類型 C: 滿 X 折 Y / 送贈品 -->
+            <div class="custom-promo-block">
+                <div class="title">【自訂】滿 X 滿額優惠</div>
+                <div class="input-row" style="margin-bottom: 6px;">
+                    <span>滿</span>
+                    <input type="number" id="custom_sx" placeholder="金額" min="0">
+                    <span>元，現折</span>
+                    <input type="number" id="custom_sy" placeholder="金額" min="0">
+                    <span>元</span>
+                </div>
+                <div class="input-row">
+                    <span class="flex-1"></span>
+                    <button class="btn" style="padding: 6px 12px;" onclick="applyCustom('sxy')">套用滿折</button>
+                    <button class="btn" style="padding: 6px 12px;" onclick="applyCustom('sxg')">套用滿送禮</button>
+                </div>
+            </div>
+            
+            <button class="btn w-full" style="background: #fff0f0; border-color: #fccc", onclick="clearAllPromos()">清除所有已套用優惠</button>
+        </div>
+    </div>
+
+    <!-- 4. 計算結果 -->
+    <div class="card" style="background: #fffef9; border: 1px solid #f6ecc2;">
+        <div class="section-title" style="border-left-color: var(--711-green);">📊 計算結果摘要</div>
+        
+        <div class="summary-row">
+            <span>原始總杯數：</span>
+            <span><span id="resQty">1</span> 杯</span>
+        </div>
+        <div class="summary-row">
+            <span>原始總金額：</span>
+            <span>$ <span id="resRawPrice">55</span></span>
+        </div>
+        <div class="summary-row" style="color: var(--711-green);">
+            <span>折扣省下：</span>
+            <span>- $ <span id="resDiscount">0</span></span>
+        </div>
+        <div id="giftSection" style="display: none;">
+            <div class="gift-tag">🎁 已滿足贈品門檻！</div>
+        </div>
+        <div class="summary-row summary-total">
+            <span>應付總金額：</span>
+            <span>$ <span id="resFinalPrice">55</span></span>
+        </div>
+        <div class="summary-row text-muted" style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #eee;">
+            <span>折合單杯均價：</span>
+            <span style="font-weight: bold; color: #333;">$ <span id="resAvgPrice">55</span></span>
+        </div>
+    </div>
+
+    <script>
+        // 儲存當前啟用的優惠
+        let activePromos = {
+            b2g2: false,
+            b3g1: false,
+            '2f79': false,
+            '4f75': false,
+            s1111_100: false,
+            s250_20: false,
+            s1111_g: false,
+            // 自訂項目
+            custom_bxy: null, // {x, y}
+            custom_dxy: null, // {x, y}
+            custom_sxy: [],   // [{x, y}]
+            custom_sxg: []    // [x]
+        };
+
+        // DOM 元素
+        const basePriceInput = document.getElementById('basePrice');
+        const coffeeQtyInput = document.getElementById('coffeeQty');
+
+        // 監聽基本輸入變更
+        basePriceInput.addEventListener('input', calculatePrice);
+        coffeeQtyInput.addEventListener('input', calculatePrice);
+
+        // 切換摺疊選單
+        function toggleCollapsible() {
+            const content = document.getElementById('collapsibleContent');
+            const arrow = document.getElementById('collapsibleArrow');
+            content.classList.toggle('show');
+            arrow.classList.toggle('rotate');
+        }
+
+        // 切換預設快捷優惠
+        function togglePreset(promoId) {
+            activePromos[promoId] = !activePromos[promoId];
+            const btn = document.getElementById(`p_${promoId}`);
+            if (activePromos[promoId]) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            calculatePrice();
+        }
+
+        // 套用自訂優惠
+        function applyCustom(type) {
+            if (type === 'bxy') {
+                const x = parseInt(document.getElementById('custom_bx').value);
+                const y = parseInt(document.getElementById('custom_by').value);
+                if (x > 0 && y > 0) {
+                    activePromos.custom_bxy = { x, y };
+                    alert(`已成功增設自訂優惠：買 ${x} 送 ${y}`);
+                }
+            } else if (type === 'dxy') {
+                const x = parseInt(document.getElementById('custom_dx').value);
+                const y = parseInt(document.getElementById('custom_dy').value);
+                if (x > 0 && y > 0 && y < 100) {
+                    activePromos.custom_dxy = { x, y };
+                    alert(`已成功增設自訂優惠：${x} 件 ${y} 折`);
+                }
+            } else if (type === 'sxy') {
+                const x = parseInt(document.getElementById('custom_sx').value);
+                const y = parseInt(document.getElementById('custom_sy').value);
+                if (x > 0 && y > 0) {
+                    activePromos.custom_sxy.push({ x, y });
+                    alert(`已成功增設自訂優惠：滿 ${x} 折 ${y}`);
+                }
+            } else if (type === 'sxg') {
+                const x = parseInt(document.getElementById('custom_sx').value);
+                if (x > 0) {
+                    activePromos.custom_sxg.push(x);
+                    alert(`已成功增設自訂優惠：滿 ${x} 送贈品`);
+                }
+            }
+            calculatePrice();
+        }
+
+        // 清除所有優惠
+        function clearAllPromos() {
+            activePromos = {
+                b2g2: false, b3g1: false, '2f79': false, '4f75': false,
+                s1111_100: false, s250_20: false, s1111_g: false,
+                custom_bxy: null, custom_dxy: null, custom_sxy: [], custom_sxg: []
+            };
+            // 重設按鈕樣式
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            // 清空自訂輸入欄位
+            document.querySelectorAll('.custom-promo-block input').forEach(input => input.value = '');
+            calculatePrice();
+        }
+
+        // 核心計算邏輯
+        function calculatePrice() {
+            const singlePrice = parseFloat(basePriceInput.value) || 0;
+            const inputQty = parseInt(coffeeQtyInput.value) || 0;
+
+            if (singlePrice <= 0 || inputQty <= 0) {
+                updateUI(inputQty, 0, 0, false);
+                return;
+            }
+
+            let totalQty = inputQty;
+            let currentSubtotal = singlePrice * totalQty;
+            let hasGift = false;
+
+            // 1. 商品折扣類計算 (買X送Y, X件Y折) 
+            // 處理買X送Y機制 (優先套用)
+            let bxyList = [];
+            if (activePromos.b2g2) bxyList.push({x: 2, y: 2});
+            if (activePromos.b3g1) bxyList.push({x: 3, y: 1});
+            if (activePromos.custom_bxy) bxyList.push(activePromos.custom_bxy);
+
+            bxyList.forEach(promo => {
+                const groupSize = promo.x + promo.y;
+                const groups = Math.floor(totalQty / groupSize);
+                if (groups > 0) {
+                    // 買X送Y中，送的Y部分是免費的
+                    const freeQtyInGroups = groups * promo.y;
+                    currentSubtotal -= (freeQtyInGroups * singlePrice);
+                }
+            });
+
+            // 處理打折機制 (X件Y折)
+            let dxyList = [];
+            if (activePromos['2f79']) dxyList.push({x: 2, y: 79});
+            if (activePromos['4f75']) dxyList.push({x: 4, y: 75});
+            if (activePromos.custom_dxy) dxyList.push(activePromos.custom_dxy);
+
+            dxyList.forEach(promo => {
+                const groups = Math.floor(totalQty / promo.x);
+                if (groups > 0) {
+                    const promoQty = groups * promo.x;
+                    const originalPromoPrice = promoQty * singlePrice;
+                    const discountedPromoPrice = originalPromoPrice * (promo.y / 100);
+                    currentSubtotal -= (originalPromoPrice - discountedPromoPrice);
+                }
+            });
+
+            // 2. 滿額折抵與贈品類計算 (Spend X get Y)
+            let totalCashDiscount = 0;
+
+            // 快捷滿額
+            if (activePromos.s1111_100 && currentSubtotal >= 1111) totalCashDiscount += 100;
+            if (activePromos.s250_20 && currentSubtotal >= 250) totalCashDiscount += 20;
+            if (activePromos.s1111_g && currentSubtotal >= 1111) hasGift = true;
+
+            // 自訂滿額折抵
+            activePromos.custom_sxy.forEach(promo => {
+                if (currentSubtotal >= promo.x) {
+                    totalCashDiscount += promo.y;
+                }
+            });
+
+            // 自訂滿額送禮
+            activePromos.custom_sxg.forEach(threshold => {
+                if (currentSubtotal >= threshold) {
+                    hasGift = true;
+                }
+            });
+
+            // 計算最終價格
+            const rawTotalPrice = singlePrice * totalQty;
+            let finalPrice = currentSubtotal - totalCashDiscount;
+            if (finalPrice < 0) finalPrice = 0;
+            
+            // 四捨五入處理
+            finalPrice = Math.round(finalPrice);
+            const discountAmount = Math.round(rawTotalPrice - finalPrice);
+            
+            updateUI(totalQty, rawTotalPrice, discountAmount, hasGift);
+        }
+
+        // 更新 UI 畫面
+        function updateUI(qty, raw, discount, gift) {
+            document.getElementById('resQty').innerText = qty;
+            document.getElementById('resRawPrice').innerText = raw;
+            document.getElementById('resDiscount').innerText = discount;
+            
+            const final = raw - discount;
+            document.getElementById('resFinalPrice').innerText = final;
+            
+            const avg = qty > 0 ? (final / qty).toFixed(1) : 0;
+            document.getElementById('resAvgPrice').innerText = avg;
+
+            document.getElementById('giftSection').style.display = gift ? 'block' : 'none';
+        }
+
+        // 初始計算
+        calculatePrice();
+    </script>
+</body>
+</html>
